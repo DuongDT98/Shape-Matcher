@@ -12,9 +12,8 @@ interface Matcher {
 const Board: FC = () => {
   const [valueLeft, setValueLeft] = useState<Matcher>();
   const [valueRight, setValueRight] = useState<Matcher>();
-
-  console.log("valueLeft", valueLeft);
-  console.log("valueRight", valueRight);
+  const [diff, setDiff] = useState<number>(4);
+  const [time, setTime] = useState<number>(60);
 
   const [listLeft, setListLeft] = useState<Matcher[]>([
     { id: 1, color: "pink", status: "close", value: 1 },
@@ -31,29 +30,65 @@ const Board: FC = () => {
   ]);
 
   useEffect(() => {
+    if (diff === 0) {
+      alert("Win");
+    }
+  }, [diff]);
+
+  useEffect(() => {
+    if (time < 0) {
+      alert("Game Over");
+      return;
+    } else
+      setTimeout(() => {
+        setTime(time - 1);
+      }, 1000);
+  }, [diff, time]);
+
+  const renderColorTime = useMemo(() => {
+    if (time < 10) {
+      return "red";
+    }
+    if (time < 30) {
+      return "yellow";
+    }
+    return "green";
+  }, [time]);
+
+  useEffect(() => {
     if (
       valueLeft?.value &&
       valueRight?.value &&
       valueLeft?.value === valueRight?.value
     ) {
-      alert("AAAA");
       setValueLeft(undefined);
       setValueRight(undefined);
+      setDiff(diff - 1);
     } else if (
       valueLeft?.value &&
       valueRight?.value &&
       valueLeft?.value !== valueRight?.value
     ) {
-      setValueLeft(undefined);
-      setValueRight(undefined);
+      setTimeout(() => {
+        const selctedLeft = listLeft?.findIndex(
+          (e: Matcher) => e?.id === valueLeft?.id
+        );
+        listLeft[selctedLeft].status = "close";
+        const selctedRight = listRight?.findIndex(
+          (e: Matcher) => e?.id === valueRight?.id
+        );
+        listRight[selctedRight].status = "close";
+        setValueLeft(undefined);
+        setValueRight(undefined);
+      }, 1000);
     }
-  }, [valueLeft, valueRight]);
+  }, [diff, listLeft, listRight, valueLeft, valueRight]);
 
   const handleClickLeft = useCallback(
     (item: Matcher) => {
       setValueLeft(item);
-      const selcted = listLeft?.find((e: Matcher) => e?.id === item?.id);
-      console.log("ListLeftNew", selcted);
+      const selcted = listLeft?.findIndex((e: Matcher) => e?.id === item?.id);
+      listLeft[selcted].status = "open";
     },
     [listLeft]
   );
@@ -61,47 +96,93 @@ const Board: FC = () => {
   const handleClickRight = useCallback(
     (item: Matcher) => {
       setValueRight(item);
-      const selcted = listLeft?.find((e: Matcher) => e?.id === item?.id);
-      console.log("ListLeftNew", selcted);
+      const selcted = listRight?.findIndex((e: Matcher) => e?.id === item?.id);
+      listRight[selcted].status = "open";
     },
     [listRight]
   );
 
+  const renderItem = useCallback(
+    (item: Matcher, location?: string) => {
+      switch (location) {
+        case "left":
+          switch (item?.status) {
+            case "close":
+              return (
+                <button
+                  className="item-left"
+                  style={{
+                    backgroundColor: "black",
+                    borderRadius: "6px",
+                  }}
+                  type="button"
+                  onClick={() => handleClickLeft(item)}
+                ></button>
+              );
+
+            default:
+              return (
+                <button
+                  className="item-left"
+                  style={{
+                    backgroundColor: `${item?.color}`,
+                    borderRadius: "6px",
+                  }}
+                  type="button"
+                ></button>
+              );
+          }
+
+        case "right":
+          switch (item?.status) {
+            case "close":
+              return (
+                <button
+                  className="item-left"
+                  style={{
+                    backgroundColor: "black",
+                    borderRadius: "6px",
+                  }}
+                  type="button"
+                  onClick={() => handleClickRight(item)}
+                ></button>
+              );
+
+            default:
+              return (
+                <button
+                  className="item-left"
+                  style={{
+                    backgroundColor: `${item?.color}`,
+                    borderRadius: "6px",
+                  }}
+                  type="button"
+                ></button>
+              );
+          }
+      }
+    },
+    [handleClickLeft, handleClickRight]
+  );
+
   return (
-    <div className="board">
+    <>
       <div>
-        {listLeft?.map((item: Matcher) => {
-          return (
-            <button
-              className="item-left"
-              style={{
-                backgroundColor:
-                  item?.status === "open" ? `${item?.color}` : "black",
-                borderRadius: "6px",
-              }}
-              type="button"
-              onClick={() => handleClickLeft(item)}
-            ></button>
-          );
-        })}
+        Time: <span style={{ color: `${renderColorTime}` }}>{time}</span> s
       </div>
-      <div>
-        {listRight?.map((item: Matcher) => {
-          return (
-            <button
-              className="item-left"
-              style={{
-                backgroundColor:
-                  item?.status === "open" ? `${item?.color}` : "black",
-                borderRadius: "6px",
-              }}
-              type="button"
-              onClick={() => handleClickRight(item)}
-            ></button>
-          );
-        })}
+      <div className="board">
+        <div>
+          {listLeft?.map((item: Matcher) => {
+            return <>{renderItem(item, "left")}</>;
+          })}
+        </div>
+        <div>
+          {listRight?.map((item: Matcher) => {
+            return <>{renderItem(item, "right")}</>;
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
